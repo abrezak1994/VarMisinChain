@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup Form</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: rgb(44,49,60);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: rgb(27,29,35);
+      padding: 20px 25px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    .header {
+      display: flex;
+      width: 100%;
+      margin-top: -32px;
+      background-color: rgb(27,29,35);
+      color: #F79413;
+    }
+    h1{
+      padding: 10px;
+    }
+    h2 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+    a{
+      text-decoration: none;
+      color: #F79413;
+    }
+    label {
+      margin-bottom: 8px;
+      display: block;
+      font-weight: bold;
+      color: #fff;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    input:focus, textarea:focus {
+      border-color: #007BFF;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+  <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <!-- Add Firebase products that you want to use -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.0/dist/ethers.umd.min.js"></script>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCg7v7WfCozs0gvtzeEQtTMs2JtkWIPtUY",
+      authDomain: "varmisinchain-database.firebaseapp.com",
+      databaseURL: "https://varmisinchain-database-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "varmisinchain-database",
+      storageBucket: "varmisinchain-database.appspot.com",
+      messagingSenderId: "757044737761",
+      appId: "1:757044737761:web:8dde4b426d43236ce129a0",
+      measurementId: "G-58F8BSG6GC"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+  <div class="header">
+    <a href="index.html"><h1>VarMısınChain</h1></a>
+  </div>
+  <div class="container">
+    <h2>Signup Form</h2>
+    <form id="signupForm">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="surname">Surname:</label>
+      <input type="text" id="surname" name="surname" required>
+
+      <label for="wallet">Ethereum Wallet Address:</label>
+      <input type="text" id="wallet" name="wallet" required>
+
+      <label for="contact">Contact Number:</label>
+      <input type="tel" id="contact" name="contact" required>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <label for="address">Address:</label>
+      <textarea id="address" name="address" rows="4" required></textarea>
+
+      <button type="submit" id="submit-regis-button">Submit</button>
+    </form>
+  </div>
+
+  <script src="js/signup.js"></script>
+
+</body>
+</html>
