@@ -41,6 +41,8 @@ const rightAsideMenuList = document.getElementById("right-aside-menu-list");
 
 const competitionDetails = document.getElementsByClassName("competition-details");
 
+const betAmountArea = document.getElementById("bet-amount-area");
+
 const footballData = document.getElementById("football");
 const basketballData = document.getElementById("basketball");
 const volleyballData = document.getElementById("volleyball");
@@ -48,7 +50,7 @@ const tennisData = document.getElementById("tennis");
 const handballData = document.getElementById("handball");
 const americanFootballData = document.getElementById("americanfootball");
 
-var couponItemsIDs = [];
+let couponItemsIDs = [];
 
 // Functions
 
@@ -236,6 +238,7 @@ loginForm.addEventListener('submit', async function(event) {
 
           // Kullanıcı bilgilerini sessionStorage'a kaydet
           sessionStorage.setItem('user', JSON.stringify(userData));
+          sessionStorage.setItem('uid', user.uid);
           sessionStorage.setItem('isLoggedIn', true);
           sessionStorage.setItem('coupon', "");
 
@@ -265,6 +268,7 @@ signOutBtn.addEventListener("click", async() => {
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('isLoggedIn');
         sessionStorage.removeItem('coupon');
+        sessionStorage.removeItem('uid');
 
         console.log("Local Storage Temizlendi");
 
@@ -296,21 +300,166 @@ closeCouponBtn.addEventListener("click", () => {
     mainSectionRightAsideContainerLittle.style.display = "flex";
 });
 
+function generateCouponID() {
+    let first = Math.random().toString(36).substr(2, 16);
+    let second = Math.random().toString(36).substr(2, 16);
+    return first+second;
+}
+  
+
 submitCouponBtn.addEventListener("click", async (e) => {
     e.preventDefault();
-    console.log("clicked");
-    if(checkUserLoggedIn() && (rightAsideMenuList.childElementCount - 1) > 0){
-        console.log("Session Open Coupon Submitted");
-        // const user = userCredential.user;
-        // console.log(user.uid);
-        let couponItemIDs = [];
-        document.querySelectorAll(".coupons-competition-code").forEach(elm => {
-            couponItemIDs.push(elm.textContent.trim());
-        });
-        console.log(couponItemIDs);
-        // await firebase.database().ref('users/' + user.uid);
+    if(checkUserLoggedIn() && ((rightAsideMenuList.childElementCount - 1) > 0)){
+        if(betAmountArea.value != ""){
+            console.log("Session Open Coupon Submitted");
+            mainSectionRightAsideContainerLittleNotifications.textContent = 0;
+            let currUID = sessionStorage.getItem("uid");
+            // console.log(currUID);
+            let couponItemIDs = [];
+            // let couponResultSelections = [];
+
+            document.querySelectorAll(".coupons-competition-code").forEach(elm => {
+                // couponItemIDs.push(elm.textContent.trim());
+                couponItemIDs.push({
+                    id: elm.textContent.trim(),
+                    betSelect: elm.parentElement.nextElementSibling.querySelector(".coupons-competition-bet-result").textContent.trim()
+                });
+                // couponResultSelections.push(elm.parentElement.nextElementSibling.querySelector(".coupons-competition-bet-result").textContent.trim());
+            });
+
+            // console.log(couponItemIDs);
+            // console.log(couponResultSelections,couponItemIDs);
+            const auth = firebase.auth();
+
+            auth.onAuthStateChanged((user) => {
+                if(user) {
+                    // Örnek kullanım
+                    const couponID = generateCouponID();
+                    const userRef = firebase.database().ref('users/' + currUID + '/activeCoupons/' + couponID);
+                    let multiplyRatios = 1.00;
+
+                    
+
+                    // console.log(multiplyRatios.toFixed(2));
+
+                    // couponItemIDs.forEach(async (item) => {
+                    //     // console.log(item,couponResultSelections[count]);
+
+                    //     // console.log(item.id, item.betSelect);
+                    //     const oddsFixtureID = `https://api-football-v1.p.rapidapi.com/v3/odds?fixture=${item.id}`;
+                    //     let ratio = await getRatiosForCouponItems(oddsFixtureID, item.betSelect);
+                    //     // ratios.push(ratio);
+                    //     // console.log("item count");
+                    //     multiplyRatios *= parseFloat(ratio);
+                    //     // console.log(multiplyRatios.toFixed(2));
+                    //     // console.log(ratios);
+                        
+                    // });
+                    // console.log(multiplyRatios.toFixed(2));
+                    // console.log(resultRatios);
+
+                    // let ratioResults = calculateRatios(couponItemIDs, multiplyRatios);
+                    calculateRatios(couponItemIDs, multiplyRatios, userRef, betAmountArea.value)
+
+                    // const newData = {
+                    //     couponItemIDs: couponItemIDs,
+                    //     ratioResult: ratioResults
+                    // };
+                    // // console.log(newData);
+
+
+                    // userRef.update(newData)
+                    // .then(() => {
+                    //     alert("Coupon submitted successfuly!");
+
+                    //     sessionStorage.removeItem('coupon');
+                    //     couponItemsIDs = [];
+                        
+                    //     rightAsideMenuList.innerHTML = `
+                    //         <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't add any competition</h4>
+                    //     `;
+                    // })
+                    // .catch((error) => {
+                    //     console.error("Güncelleme sırasında hata oluştu:", error);
+                    // });
+                }
+            });
+        }else {
+            alert("Please enter a valid Bet Amount!");
+        }
     }
 });
+
+const calculateRatios = async (couponItemIDs, multiplyRatios, userRef, betAmount) => {
+    for (const item of couponItemIDs) {
+        // console.log(item, couponResultSelections[count]);
+        
+        // console.log(item.id, item.betSelect);
+        const oddsFixtureID = `https://api-football-v1.p.rapidapi.com/v3/odds?fixture=${item.id}`;
+        let ratio = await getRatiosForCouponItems(oddsFixtureID, item.betSelect);
+        multiplyRatios *= parseFloat(ratio);
+        // console.log(multiplyRatios.toFixed(2));
+    }
+
+    const newData = {
+        couponItemIDs: couponItemIDs,
+        ratioResult: multiplyRatios,
+        betAmount: betAmount
+    };
+    // console.log(newData);
+
+
+    userRef.update(newData)
+    .then(() => {
+        alert("Coupon submitted successfuly!");
+
+        sessionStorage.removeItem('coupon');
+        couponItemsIDs = [];
+        
+        rightAsideMenuList.innerHTML = `
+            <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't add any competition</h4>
+        `;
+    })
+    .catch((error) => {
+        console.error("Güncelleme sırasında hata oluştu:", error);
+    });
+    
+    
+};
+
+const getRatiosForCouponItems = async (oddsFixtureID, couponResultSelection) => {
+    try{
+        const response = await fetch(oddsFixtureID, options);
+        const result = await response.text();
+
+        const data = JSON.parse(result);
+
+        // console.log(couponResultSelection);
+        // Verileri işlemek için gerekli bilgileri alalım
+        const fixtureOdds = data.response.map(match => {
+            let betSelection;
+            if(couponResultSelection == "Home"){
+                betSelection = 0;
+            }else if(couponResultSelection == "Draw"){
+                betSelection = 1;
+            }else if(couponResultSelection == "Away"){
+                betSelection = 2;
+            }else {
+                alert("An Error Occured. Please contact with support");
+            }
+
+            const bookmakers = match.bookmakers[0]; //Nordic Bet
+            const fixtureid = match.fixture.id;
+            // console.log(bookmakers.bets[0].values[betSelection].odd); //3 odds that home,draw,away
+            return bookmakers.bets[0].values[betSelection].odd;
+        });
+
+        return fixtureOdds;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 mainSectionRightAsideContainerLittle.addEventListener("click", () => {
     mainSectionRightAsideContainerLittle.style.display = "none";
@@ -361,9 +510,8 @@ const LoadFootballData = async () => {
     let today = new Date();
     let tomorrow = new Date();
     tomorrow.setDate(today.getDate() + 1);
-    let day = tomorrow.getDate();
+    let day = tomorrow.getDate() < 10 ? "0" + tomorrow.getDate() : tomorrow.getDate();
     let month = (tomorrow.getMonth() + 1) < 10 ? "0" + (tomorrow.getMonth() + 1) : (tomorrow.getMonth() + 1);
-
     let year = tomorrow.getFullYear();
 
     let formattedDate = `${year}-${month}-${day}`;
@@ -392,7 +540,7 @@ const createBetDetails = async (MatchesUrl) => {
             const fixture = match.fixture;
             const league = match.league;
             const update = match.update;
-            const bookmakers = match.bookmakers[0];
+            const bookmakers = match.bookmakers[0]; //Nordic Bet
 
             const betsMatchWinner = bookmakers.bets[0];
             // const betsHomeAway = bookmakers.bets[1];
@@ -567,6 +715,7 @@ const createBetDetails = async (MatchesUrl) => {
                                 </div>
                             </li>
                         `;
+                        
 
                         let tempDiv = document.createElement('div');
                         tempDiv.innerHTML = couponItemTemplate;
@@ -592,7 +741,7 @@ const createBetDetails = async (MatchesUrl) => {
 
                         });
                         
-                    })
+                    });
 
                 });
                 
