@@ -11,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
 
     <script>
         // Your web app's Firebase configuration
@@ -52,6 +53,16 @@
                 <div class="header-right">
                     <div class="header-login-signup">
                        <div id="logged-in-card" class="logged-in-card-container">
+                            <div id="bet-history" class="bet-history">
+                                
+                                <div id="show-bet-history-button" class="show-bet-history-button">My Bets <i class="fa-solid fa-caret-up"></i></div>
+
+                                <ul id="bet-history-list" class="bet-history-list">
+                                    
+                                </ul>
+
+                            </div>
+
                             <div class="logged-in-left">
                                 <div id="logged-in-name-surname">
                                     
@@ -60,6 +71,7 @@
                                     
                                 </div>
                             </div>
+                            
                             <div id="sign-out" class="logged-in-right">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                             </div>
@@ -80,6 +92,11 @@
                                     <input type="password" placeholder="Password" id="password">
                             
                                     <button id="login-action-button">Log In</button>
+
+                                    <div class="forgot-password-button">
+                                        <a href="forgotPassword.html">Forgot Password</a>
+                                    </div>
+                                    
                                 
                                 </div>
                             </form>
@@ -94,7 +111,7 @@
                 <div class="navbar-items">
                     <ul class="navbar-items-list">
                         <li class="navbar-item"><a href="">News</a></li>
-                        <li class="navbar-item"><a href="">Live Competitions</a></li>
+                        <li class="navbar-item"><a href="index.html">Live Competitions</a></li>
                         <li class="navbar-item"><a href="">Popular Bets</a></li>
                     </ul>
                 </div>

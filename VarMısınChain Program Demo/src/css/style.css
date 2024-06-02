@@ -289,6 +289,119 @@ li{
     margin-right: 24px;
 }
 
+.show-bet-history-button {
+    display: flex;
+    align-items: center;
+}
+
+.show-bet-history-button i{
+    margin-left: 6px;
+}
+
+.bet-history {
+    position: relative;
+    padding: 4px 24px;
+}
+
+.bet-history:hover {
+    cursor: pointer;
+}
+
+.bet-history-list {
+    position: absolute;
+    background-color: #080710;
+    /* padding: 16px 6px; */
+    right: -60px;
+    top: 40px;
+    border-radius: 6px;
+    max-height: 305px;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+}
+
+.bet-history-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    border-top: 1px solid #F79413;
+    border-bottom: 1px solid #F79413;
+    padding: 6px;
+}
+
+.coupon-details-button {
+    display: flex;
+}
+
+.ended-coupon-result {
+    margin-right: 6px;
+}
+
+.ended-coupon-win {
+    color: green;
+}
+
+.ended-coupon-lose {
+    color: red;
+}
+
+.coupon-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.coupon-items {
+    margin: 6px 0;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #fff;
+}
+
+.coupon-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.coupon-id {
+    color: #F79413;
+}
+
+.bet-ratio-amount {
+    display: flex;
+    justify-content: space-between;
+}
+
+.fixture-details {
+    display: flex;
+    margin: 0 12px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.bet-amount, .total-earn {
+    color: #50AAFF;
+}
+
+.home-team {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.away-team {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.active-bet {
+    color: green;
+}
+
+.ended-bet {
+    color: red;
+}
+
 .logged-in-card-container{
     display: flex;
     align-items: center;
@@ -314,6 +427,21 @@ li{
     opacity: .8;
 }
 
+.forgot-password-button {
+    padding: 10px 0;
+}
+
+.go-back-button {
+    padding: 10px 0;
+    font-size: 15px;
+}
+
+.reset-password-title {
+    font-weight: bold;
+    font-size: 26px;
+    color: #F79413;
+    margin: 0 auto;
+}
 
 /* Navbar Section */
 #navbar{

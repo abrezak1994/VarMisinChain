@@ -15,7 +15,7 @@ const midContentMainItems = document.querySelectorAll(".mid-content-main-item");
 
 const loginBtn = document.getElementById("login");
 const signupBtn = document.getElementById("signup");
-const loginForm = document.getElementById("login-form");
+const loginForm = document.getElementById("login-action-button");
 const loginCard = document.getElementById("login-card");
 const loggedInCard = document.getElementById("logged-in-card");
 const loggedInNameSurname = document.getElementById("logged-in-name-surname");
@@ -23,6 +23,10 @@ const loggedInWalletAddress = document.getElementById("logged-in-wallet-address"
 const notLoggedInCard = document.getElementById("not-logged-in-card");
 const signOutBtn = document.getElementById("sign-out");
 const closeLoginTab = document.getElementById("close-login-tab");
+const betHistoryToggleBtn = document.getElementById("bet-history");
+const betHistoryList = document.getElementById("bet-history-list");
+
+const couponDetailsToggleBtns = document.querySelectorAll(".coupon-details-button");
 
 const email = document.getElementById('username');
 const password = document.getElementById('password');
@@ -207,58 +211,119 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error(error);
     }
-    // ratiosListEvents();
-});
+});//  Checked
 
 
 loginBtn.addEventListener("click", (e) => {
     e.preventDefault();
     loginCard.style.display = "block";
-});
+});//   Checked
 
-loginForm.addEventListener('submit', async function(event) {
+loginForm.addEventListener('click', async function(event) {
     event.preventDefault();
     try {
-      // Kullanıcıyı Firebase Authentication ile giriş yaptı
       const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, password.value);
       const user = userCredential.user;
-  
-      console.log('Kullanıcı giriş yaptı:', user.uid);
+
       alert('Giriş başarılı!');
 
-      // Realtime Database'den kullanıcı bilgilerini al
+      // Get user information from realtime database
       const userRef = await firebase.database().ref('users/' + user.uid);
       userRef.once('value').then((snapshot) => {
         if (snapshot.exists()) {
           const userData = snapshot.val();
+          const userActiveCoupons = userData.activeCoupons;
           let walletAddress = userData.wallet;
 
           loggedInNameSurname.innerHTML = userData.name + " " + userData.surname;
           loggedInWalletAddress.innerHTML = walletAddress.slice(0,7) + "..." + walletAddress.slice(-5);
 
-          // Kullanıcı bilgilerini sessionStorage'a kaydet
+          if(userActiveCoupons != undefined) {
+              Object.keys(userActiveCoupons).forEach(key => {
+                
+                const couponItemIDs = userActiveCoupons[key].couponItemIDs;
+                let betHistoryTemplate = `
+                    <li class="bet-history-item">
+                                                
+                        <div class="coupon-top">
+                            <div class="coupon-id">${key}</div>
+                            <div class="coupon-details-button">
+                                <i class="fa-solid fa-caret-down"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="coupon-items">
+                            <ul id="coupon-item-list-${key}">
+
+                            </ul>
+                        </div>
+                        
+                        <div class="bet-ratio-amount">
+                            <div class="bet-amount">Amount: ${userActiveCoupons[key].betAmount}</div>
+                            <div class="total-earn">Earn: ${((userActiveCoupons[key].betAmount) * (userActiveCoupons[key].ratioResult)).toFixed(2)}</div>
+                            <div class="status active-bet">Active</div>
+                        </div>
+                    </li>
+                `;
+
+                betHistoryList.innerHTML += betHistoryTemplate;
+                
+                let couponItemList = document.getElementById(`coupon-item-list-${key}`);
+                
+                couponItemIDs.forEach(item => {
+                    const betItemID = item.id;
+                    const betItemSelection = item.betSelect;
+                    const betItemHomeTeam = item.home;
+                    const betItemAwayTeam = item.away;
+                    
+                    let innerBetHistoryTemplate = `
+                        
+                        <li class="coupon-item">
+                            <div class="fixture-id">${betItemID}</div>
+                            <div class="fixture-details">
+                                <div class="home-team">${betItemHomeTeam}</div>
+                                <div>-</div>
+                                <div class="away-team">${betItemAwayTeam}</div>
+                            </div>
+                            <div class="fixture-bets">
+                                <div class="user-bet-selection">${betItemSelection}</div>
+                                <div class="user-bet-ratio">2.35</div>
+                            </div>
+                        </li>
+                        
+                    `;
+                    
+                    couponItemList.innerHTML += innerBetHistoryTemplate;
+                    
+                });
+
+              });
+            } 
+
+
+          // Save user information to the session storage
           sessionStorage.setItem('user', JSON.stringify(userData));
           sessionStorage.setItem('uid', user.uid);
           sessionStorage.setItem('isLoggedIn', true);
           sessionStorage.setItem('coupon', "");
 
           mainSectionRightAside.style.display = "flex";
-          
         } else {
-          console.log('Kullanıcı bilgisi bulunamadı');
-          alert('Kullanıcı bilgisi bulunamadı!');
+          alert('The user has not found!');
         }
       });
   
       loginCard.style.display = "none";
       loggedInCard.style.display = "flex";
       notLoggedInCard.style.display = "none";
-
+      /* Blockchain start */
+      await connectWallet(); // connectWallet fonksiyonunun çağrılmasını bekle
+      console.log("connect wallet executed");
+      /* Blockchain end */
     } catch (error) {
-      console.error('Giriş hatası:', error.message);
-      alert('Giriş bilgileri hatalı: ');
+      alert('Wrong Login Information');
     }
-});
+});//   Checked
   
 signOutBtn.addEventListener("click", async() => {
     await firebase.auth().signOut().then(() => {
@@ -282,162 +347,176 @@ signOutBtn.addEventListener("click", async() => {
         `;
         mainSectionRightAsideContainerLittleNotifications.textContent = 0;
         mainSectionRightAside.style.display = "none";
+
+        window.location.href = 'index.html';
         
 
     }).catch((error) => {
-        console.error("Çıkış yaparken hata oluştu: ",error);
-        alert("Çıkış yaparken hata oluştu");
+        console.error("Error occured while sign out: ",error);
+        alert("Error occured while sign out:");
     });
-});
+});//   Checked
 
 closeLoginTab.addEventListener("click", (e) => {
     e.preventDefault();
     loginCard.style.display = "none";
-});
+});//   Checked
 
 closeCouponBtn.addEventListener("click", () => {
     mainSectionRightAsideContainer.style.display = "none";
     mainSectionRightAsideContainerLittle.style.display = "flex";
-});
+});//   Checked
 
-function generateCouponID() {
+betHistoryToggleBtn.addEventListener("click", (e) => {
+    let historyBtn = document.getElementById("show-bet-history-button");
+    let icon = historyBtn.querySelector(".fa-solid");
+    let iconsClassList = icon.classList;
+    
+    if(iconsClassList.contains("fa-caret-down")){
+        iconsClassList.remove("fa-caret-down");
+        iconsClassList.add("fa-caret-up");
+
+        betHistoryList.style.display = "none";
+    }else {
+        iconsClassList.remove("fa-caret-up");
+        iconsClassList.add("fa-caret-down");
+
+        betHistoryList.style.display = "flex";
+    }
+
+});//   Checked
+
+const generateCouponID = () => {
     let first = Math.random().toString(36).substr(2, 16);
     let second = Math.random().toString(36).substr(2, 16);
+
     return first+second;
-}
-  
+}//   Checked
 
 submitCouponBtn.addEventListener("click", async (e) => {
     e.preventDefault();
+
     if(checkUserLoggedIn() && ((rightAsideMenuList.childElementCount - 1) > 0)){
-        if(betAmountArea.value != ""){
-            console.log("Session Open Coupon Submitted");
+        if(betAmountArea.value != "" && betAmountArea.value > 0){
             mainSectionRightAsideContainerLittleNotifications.textContent = 0;
             let currUID = sessionStorage.getItem("uid");
-            // console.log(currUID);
             let couponItemIDs = [];
-            // let couponResultSelections = [];
 
             document.querySelectorAll(".coupons-competition-code").forEach(elm => {
-                // couponItemIDs.push(elm.textContent.trim());
                 couponItemIDs.push({
                     id: elm.textContent.trim(),
-                    betSelect: elm.parentElement.nextElementSibling.querySelector(".coupons-competition-bet-result").textContent.trim()
+                    betSelect: elm.parentElement.nextElementSibling.querySelector(".coupons-competition-bet-type").textContent.trim(),
+                    home: elm.parentElement.nextElementSibling.querySelector(".coupons-competition-home").textContent.trim(),
+                    away: elm.parentElement.nextElementSibling.querySelector(".coupons-competition-away").textContent.trim()
                 });
-                // couponResultSelections.push(elm.parentElement.nextElementSibling.querySelector(".coupons-competition-bet-result").textContent.trim());
             });
 
-            // console.log(couponItemIDs);
-            // console.log(couponResultSelections,couponItemIDs);
             const auth = firebase.auth();
 
             auth.onAuthStateChanged((user) => {
                 if(user) {
-                    // Örnek kullanım
                     const couponID = generateCouponID();
                     const userRef = firebase.database().ref('users/' + currUID + '/activeCoupons/' + couponID);
                     let multiplyRatios = 1.00;
 
-                    
-
-                    // console.log(multiplyRatios.toFixed(2));
-
-                    // couponItemIDs.forEach(async (item) => {
-                    //     // console.log(item,couponResultSelections[count]);
-
-                    //     // console.log(item.id, item.betSelect);
-                    //     const oddsFixtureID = `https://api-football-v1.p.rapidapi.com/v3/odds?fixture=${item.id}`;
-                    //     let ratio = await getRatiosForCouponItems(oddsFixtureID, item.betSelect);
-                    //     // ratios.push(ratio);
-                    //     // console.log("item count");
-                    //     multiplyRatios *= parseFloat(ratio);
-                    //     // console.log(multiplyRatios.toFixed(2));
-                    //     // console.log(ratios);
-                        
-                    // });
-                    // console.log(multiplyRatios.toFixed(2));
-                    // console.log(resultRatios);
-
-                    // let ratioResults = calculateRatios(couponItemIDs, multiplyRatios);
-                    calculateRatios(couponItemIDs, multiplyRatios, userRef, betAmountArea.value)
-
-                    // const newData = {
-                    //     couponItemIDs: couponItemIDs,
-                    //     ratioResult: ratioResults
-                    // };
-                    // // console.log(newData);
-
-
-                    // userRef.update(newData)
-                    // .then(() => {
-                    //     alert("Coupon submitted successfuly!");
-
-                    //     sessionStorage.removeItem('coupon');
-                    //     couponItemsIDs = [];
-                        
-                    //     rightAsideMenuList.innerHTML = `
-                    //         <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't add any competition</h4>
-                    //     `;
-                    // })
-                    // .catch((error) => {
-                    //     console.error("Güncelleme sırasında hata oluştu:", error);
-                    // });
+                    calculateRatios(couponItemIDs, multiplyRatios, userRef, betAmountArea.value);
                 }
             });
+
+            betAmountArea.value = 0;
         }else {
             alert("Please enter a valid Bet Amount!");
         }
+    }else {
+        alert("Please Login First!");
     }
-});
+});//   Checked
 
 const calculateRatios = async (couponItemIDs, multiplyRatios, userRef, betAmount) => {
+    /* Blockchain Start */
+    let bigMultiplyRatios = new BigNumber(multiplyRatios); // BigNumber ile başlangıç oranı
+    /* Blockchain End */
+    
     for (const item of couponItemIDs) {
-        // console.log(item, couponResultSelections[count]);
-        
-        // console.log(item.id, item.betSelect);
         const oddsFixtureID = `https://api-football-v1.p.rapidapi.com/v3/odds?fixture=${item.id}`;
         let ratio = await getRatiosForCouponItems(oddsFixtureID, item.betSelect);
-        multiplyRatios *= parseFloat(ratio);
-        // console.log(multiplyRatios.toFixed(2));
+        // multiplyRatios *= parseFloat(ratio); //Before Blockchain
+        /* Blockchain Start */
+        bigMultiplyRatios = bigMultiplyRatios.multipliedBy(new BigNumber(ratio));
+        /* Blockchain End */
     }
+
+    /* Blockchain Start */
+    const scaledOdds = bigMultiplyRatios.multipliedBy(new BigNumber(100)).decimalPlaces(0, BigNumber.ROUND_DOWN); // Yuvarlama işlemi yapılıyor
+    console.log("Scaled Odds:", scaledOdds.toString());
+    /* Blockchain End */
 
     const newData = {
         couponItemIDs: couponItemIDs,
-        ratioResult: multiplyRatios,
-        betAmount: betAmount
+        ratioResult: scaledOdds.toString(),// multiplyRatios // Before Blockhain
+        betAmount: betAmount,
+        betStatus: "Active"
     };
-    // console.log(newData);
 
+    /* Blockchain Start */
+    try {
+        const accounts = await web3.eth.getAccounts();
+        console.log("Accounts:", accounts);
 
-    userRef.update(newData)
-    .then(() => {
-        alert("Coupon submitted successfuly!");
+        // betAmount ve ratioResult'ı wei olarak işleyelim
+        const weiBetAmount = web3.utils.toWei(betAmount.toString(), 'ether');
 
-        sessionStorage.removeItem('coupon');
-        couponItemsIDs = [];
+        await bettingContract.methods.placeBet(scaledOdds.toString()).send({
+            from: accounts[0],
+            value: weiBetAmount
+        });
+
+        userRef.update(newData)
+        .then(() => {
+            alert("Coupon submitted successfully!");
+
+            sessionStorage.removeItem('coupon');
+            couponItemsIDs = [];
+
+            rightAsideMenuList.innerHTML = `
+                <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't added any competition</h4>
+            `;
+        })
+        .catch((error) => {
+            console.error("An Error occured while updating:", error);
+        });
+
+    } catch (error) {
+        console.error('Error placing bet', error);
+        alert('Error placing bet: ' + error.message);
+    }
+    /* Blockchain End */
+
+    // userRef.update(newData)  //  Before Blockchain
+    // .then(() => {
+    //     alert("Coupon submitted successfuly!");
+
+    //     sessionStorage.removeItem('coupon');
+    //     couponItemsIDs = [];
         
-        rightAsideMenuList.innerHTML = `
-            <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't add any competition</h4>
-        `;
-    })
-    .catch((error) => {
-        console.error("Güncelleme sırasında hata oluştu:", error);
-    });
-    
-    
-};
+    //     rightAsideMenuList.innerHTML = `
+    //         <h4 id="right-aside-menu-list-title" class="right-aside-menu-list-title" style="padding: 8px; display: block;">You haven't add any competition</h4>
+    //     `;
+    // })
+    // .catch((error) => {
+    //     console.error("An Error occured while updating:", error);
+    // });    
+}//   Checked
 
 const getRatiosForCouponItems = async (oddsFixtureID, couponResultSelection) => {
     try{
         const response = await fetch(oddsFixtureID, options);
         const result = await response.text();
-
         const data = JSON.parse(result);
 
-        // console.log(couponResultSelection);
-        // Verileri işlemek için gerekli bilgileri alalım
         const fixtureOdds = data.response.map(match => {
             let betSelection;
+
             if(couponResultSelection == "Home"){
                 betSelection = 0;
             }else if(couponResultSelection == "Draw"){
@@ -450,25 +529,26 @@ const getRatiosForCouponItems = async (oddsFixtureID, couponResultSelection) => 
 
             const bookmakers = match.bookmakers[0]; //Nordic Bet
             const fixtureid = match.fixture.id;
-            // console.log(bookmakers.bets[0].values[betSelection].odd); //3 odds that home,draw,away
             return bookmakers.bets[0].values[betSelection].odd;
         });
 
-        return fixtureOdds;
+        // return fixtureOdds; // Before Blockchain
+        /* Blockchain Start */
+        return fixtureOdds[0];
+        /* Blockchain End */
 
     } catch (error) {
         console.error(error);
     }
-}
+}//   Checked ???return???
 
 mainSectionRightAsideContainerLittle.addEventListener("click", () => {
     mainSectionRightAsideContainerLittle.style.display = "none";
     mainSectionRightAsideContainer.style.display = "flex";
-});
+});//   Checked
 
 midContentMainItemList.addEventListener("click",function(e){
     let selectedCompetition = e.target.closest("li");
-
     let detail = selectedCompetition.querySelector(".competition-details");
 
     if(!selectedCompetition.classList.contains("ratio")){
@@ -479,31 +559,31 @@ midContentMainItemList.addEventListener("click",function(e){
         }
     }
     
-});
+});//   Checked
 
 footballData.addEventListener("click", async function(){
     await LoadFootballData();
-});
+});//   Checked
 
 basketballData.addEventListener("click", function(){
     LoadBasketballData();
-});
+});//   Checked
 
 volleyballData.addEventListener("click", function(){
     LoadVolleyballData();
-});
+});//   Checked
 
 tennisData.addEventListener("click", function(){
     LoadTennisData();
-});
+});//   Checked
 
 handballData.addEventListener("click", function(){
     LoadHandballData();
-});
+});//   Checked
 
 americanFootballData.addEventListener("click", function(){
     LoadAmericanFootballData();
-});
+});//   Checked
 
 
 const LoadFootballData = async () => {
@@ -517,35 +597,26 @@ const LoadFootballData = async () => {
     let formattedDate = `${year}-${month}-${day}`;
 
     let MatchesUrl = `https://api-football-v1.p.rapidapi.com/v3/odds?date=${formattedDate}`;
-    // console.log(formattedDate);
     
     midContentMainItemList.innerHTML = "";
 
     await createBetDetails(MatchesUrl);
 
-    // console.log(couponItemsIDs);
-
-}
+}//   Checked
 
 const createBetDetails = async (MatchesUrl) => {
     try {
         const response = await fetch(MatchesUrl, options);
         const result = await response.text();
- 
         const data = JSON.parse(result);
 
-        // Verileri işlemek için gerekli bilgileri alalım
         const fixtures = data.response.map(match => {
-
             const fixture = match.fixture;
             const league = match.league;
             const update = match.update;
             const bookmakers = match.bookmakers[0]; //Nordic Bet
 
             const betsMatchWinner = bookmakers.bets[0];
-            // const betsHomeAway = bookmakers.bets[1];
-            const betsHalfTimeFullTime = bookmakers.bets[6];
-            // console.log(betsHalfTimeFullTime);
 
             let currentFixture = getDataFromApi(fixture.id).then(fixtureData => {
                 let currID = fixtureData["Fixture ID"];
@@ -599,200 +670,268 @@ const createBetDetails = async (MatchesUrl) => {
                                 
                                 <div class="ratios">
                                     <ul id="${fixture.id}" class="ratios-list wrap">
-                                        <li class="ratio" data="0" value="${betsMatchWinner.values[0].odd}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[0].value} ${betsMatchWinner.values[0].odd}</div></li>
-                                        <li class="ratio" data="1" value="${betsMatchWinner.values[1].odd}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[1].value} ${betsMatchWinner.values[1].odd}</div></li>
-                                        <li class="ratio" data="2" value="${betsMatchWinner.values[2].odd}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[2].value} ${betsMatchWinner.values[2].odd}</div></li>
+                                        <li class="ratio" data="0" value="${betsMatchWinner.values[0].odd *100}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[0].value} ${betsMatchWinner.values[0].odd}</div></li>
+                                        <li class="ratio" data="1" value="${betsMatchWinner.values[1].odd *100}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[1].value} ${betsMatchWinner.values[1].odd}</div></li>
+                                        <li class="ratio" data="2" value="${betsMatchWinner.values[2].odd *100}"><div class="ratio-inner">${betsMatchWinner.name}</div><div class="ratio-inner-value" style="font-size: 14px;">${betsMatchWinner.values[2].value} ${betsMatchWinner.values[2].odd}</div></li>
                                     </ul>
                                 </div>
                                 <div class="add-to-coupon">
                                     <input type="text" name="text" disabled class="add-to-coupon-text" value="Selection: ">
-                                    <input type="button" class="add-to-coupon-btn" value="Add to Coupon">
+                                    <input type="button" id="${fixture.id}-add-to-coupon-btn" class="add-to-coupon-btn" value="Add to Coupon">
                                 </div>
                             </div>
                         </li>     
                 `;
 
                 midContentMainItemList.insertAdjacentHTML("beforeend",template);
-                
-                const currentElement = document.getElementById(currID);
 
-                currentElement.addEventListener("click", function(e){
+                // Get Selected Target li Element
+                document.getElementById(`${fixture.id}`).addEventListener("click", (e) => {
 
-                    let selectedLi = e.target.closest("li");
-                    let currentList = selectedLi.closest("ul");
-            
-                    // ul elemanının en yakın li ebeveynini buluyoruz
-                    var parentLi = currentList.closest('li');
-                    // parentLi içinde add-to-coupon sınıfına sahip div elemanını buluyoruz
-                    var addToCouponDiv = parentLi.querySelector('.add-to-coupon');
-                    // add-to-coupon sınıfına sahip div içinde add-to-coupon-text sınıfına sahip input elemanını buluyoruz
-                    var addToCouponTextInput = addToCouponDiv.querySelector('.add-to-coupon-text');
-
-                    const addToCouponBtn = addToCouponDiv.querySelector('.add-to-coupon-btn');
-            
-                    currentElement.querySelectorAll(".ratio").forEach(element => {
+                    e.target.closest("ul").querySelectorAll(".ratio").forEach(element => {
                         if(element.classList.contains("selected"))
                             element.classList.remove("selected");
                     });
-                
-                    selectedLi.classList.add("selected");
-                
-                    let ratio = selectedLi.getAttribute("value");
 
-                    addToCouponTextInput.value = "Selection: " + ratio;
+                    if(!e.target.closest("li").classList.contains("selected")){
+                        e.target.closest("li").classList.add("selected");
+                    }
+                    
+                });
 
-                    const selectedOddName = selectedLi.querySelector(".ratio-inner");
-                    const selectedOddValue = selectedLi.querySelector(".ratio-inner-value");
-                    const selectedOddValueText = selectedOddValue.textContent.split(" ");
+                // Add to Coupon Btns Event Listener
+                document.getElementById(`${fixture.id}-add-to-coupon-btn`).addEventListener("click", (e) => {
+                    e.preventDefault();
+                    // console.log("add to coupon button");
+                    if(!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('user') == null){
+                        alert("Please Login First!");
+                        return;
+                    }
 
-                    addToCouponBtn.addEventListener("click", (e) => {
-                        e.preventDefault();
-
-                        if(!sessionStorage.getItem('isLoggedIn') || sessionStorage.getItem('user') == null){
-                            alert("Please Login First!");
+                    if(sessionStorage.getItem('coupon') != null) {
+                        if(sessionStorage.getItem('coupon').includes(fixture.id)){
+                            alert("You have already add this match to your coupon.");
                             return;
                         }
+                    }
 
-                        if(sessionStorage.getItem('coupon')){
-                            if(sessionStorage.getItem('coupon').includes(currID)){
-                                alert("You have already add this match to your coupon.");
-                                return;
-                            }
-                        }else {
-                            sessionStorage.setItem('coupon',"");
-                        }
+                    mainSectionRightAsideContainerLittleNotifications.textContent = rightAsideMenuList.childElementCount;
+                    couponItemsIDs.push(fixture.id);
+                    sessionStorage.setItem('coupon', couponItemsIDs);
 
-                        if(document.getElementById("right-aside-menu-list-title")){
-                            document.getElementById("right-aside-menu-list-title").style.display = "none";
-                        }
+                    console.log("anasısikikpiyuade");
+                    if(document.getElementById("right-aside-menu-list-title"))
+                        document.getElementById("right-aside-menu-list-title").style.display = "none";
 
-                        let couponItemTemplate = `
-                            <li class="right-aside-menu-list-item">
-                                <div class="coupons-competition">
-                                    <div class="coupons-competition-left">
-                                        <div class="coupons-competition-category-icon">
-                                            <i class="left-aside-menu-item-right fa-sharp fa-solid fa-futbol fa-2xs" style="color: #fff;"></i>
+                    var parentUl = document.getElementById(`${fixture.id}`);
+                    var selectedLi;
+                    var selectedBetText;
+                    
+                    parentUl.querySelectorAll(".ratio").forEach(element => {
+                        if(element.classList.contains("selected")){
+                            console.log(element.getAttribute("data"));
+                            selectedLi = element;
+                        } 
+                    });
+
+                    if(selectedLi.getAttribute("data") == 0){
+                        selectedBetText = "Home";
+                    }else if(selectedLi.getAttribute("data") == 1) {
+                        selectedBetText = "Draw";
+                    }else {
+                        selectedBetText = "Away";
+                    }
+
+                    let couponItemTemplate = `
+                        <li id="${fixture.id}-coupon-container" class="right-aside-menu-list-item">
+                            <div class="coupons-competition">
+                                <div class="coupons-competition-left">
+                                    <div class="coupons-competition-category-icon">
+                                        <i class="left-aside-menu-item-right fa-sharp fa-solid fa-futbol fa-2xs" style="color: #fff;"></i>
+                                    </div>
+                                    <div class="coupons-competition-code">
+                                        ${fixture.id}
+                                    </div>
+                                </div>
+                                <div class="coupons-competition-mid">
+                                    <div class="coupons-competition-mid-col-top">
+                                        <div class="coupons-competition-home">
+                                            <img src="${currHomeLogo}" class="event-logo"> ${currHome}
                                         </div>
-                                        <div class="coupons-competition-code">
-                                            ${currID}
+                                        
+                                        <div class="coupons-competition-away">
+                                            <img src="${currAwayLogo}" class="event-logo"> ${currAway}
                                         </div>
                                     </div>
-                                    <div class="coupons-competition-mid">
-                                        <div class="coupons-competition-mid-col-top">
-                                            <div class="coupons-competition-home">
-                                                <img src="${currHomeLogo}" class="event-logo"> ${currHome}
-                                            </div>
+                                    <div class="coupons-competition-mid-col-mid">
+                                        <div class="coupons-competition-date">
+                                            Bugün
+                                        </div>
+                                        <div class="coupons-competition-hour">
+                                            ${hours}:${minutes}
+                                        </div>
+                                    </div>
+                                    <div class="coupons-competition-mid-col-bottom">
+                                        <div class="coupons-competition-bet-type">
+                                            ${selectedBetText}
+                                        </div>
+                                        <div class="coupons-competition-bet-result">
                                             
-                                            <div class="coupons-competition-away">
-                                                <img src="${currAwayLogo}" class="event-logo"> ${currAway}
-                                            </div>
-                                        </div>
-                                        <div class="coupons-competition-mid-col-mid">
-                                            <div class="coupons-competition-date">
-                                                Bugün
-                                            </div>
-                                            <div class="coupons-competition-hour">
-                                                ${hours}:${minutes}
-                                            </div>
-                                        </div>
-                                        <div class="coupons-competition-mid-col-bottom">
-                                            <div class="coupons-competition-bet-type">
-                                                ${selectedOddName.textContent}
-                                            </div>
-                                            <div class="coupons-competition-bet-result">
-                                                ${selectedOddValueText[0]}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="coupons-competition-right">
-                                        <div id="${currID}-coupon" class="coupons-competition-delete-competition">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </div>
-                                        <div class="coupons-competition-bet-ratio">
-                                        ${ratio}
                                         </div>
                                     </div>
                                 </div>
-                            </li>
-                        `;
-                        
+                                <div class="coupons-competition-right">
+                                    <div id="${fixture.id}-coupon-delete-btn" class="coupons-competition-delete-competition">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </div>
+                                    <div class="coupons-competition-bet-ratio">
+                                        ${betsMatchWinner.values[selectedLi.getAttribute("data")].odd}
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    `;
 
-                        let tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = couponItemTemplate;
-
-                        rightAsideMenuList.insertAdjacentElement("beforeend",tempDiv);
-
-                        mainSectionRightAsideContainerLittleNotifications.textContent = rightAsideMenuList.childElementCount - 1;
-                        couponItemsIDs.push(currID);
-                        sessionStorage.setItem('coupon', couponItemsIDs);
-
-                        const deleteCouponCompetition = document.getElementById(`${currID}-coupon`);
-
-                        deleteCouponCompetition.addEventListener("click", () => {
-                            deleteCouponCompetition.closest("li").parentElement.remove();
-                            mainSectionRightAsideContainerLittleNotifications.textContent = rightAsideMenuList.childElementCount - 1;
-
-                            couponItemsIDs = couponItemsIDs.filter(element => element !== currID);
-                            sessionStorage.setItem('coupon', couponItemsIDs);
-
-                            if(document.getElementById("right-aside-menu-list-title").style.display == "none" && rightAsideMenuList.childElementCount == 1){
-                                document.getElementById("right-aside-menu-list-title").style.display = "block";
-                            }
-
-                        });
-                        
-                    });
+                    rightAsideMenuList.innerHTML += couponItemTemplate;
 
                 });
-                
             });
-            
+        });
+
+        //  Delete Competition From Coupon Btns
+        document.getElementById("right-aside-menu-list").addEventListener("click", (e) => {
+            if (e.target && e.target.closest(".coupons-competition-delete-competition")) {
+                const couponContainer = e.target.closest(".right-aside-menu-list-item");
+                const couponId = couponContainer.id.split("-")[0];
+                console.log(couponId);
+                console.log(couponItemsIDs);
+                couponContainer.remove();
+
+                mainSectionRightAsideContainerLittleNotifications.textContent = rightAsideMenuList.childElementCount -1;
+
+                couponItemsIDs = couponItemsIDs.filter(element => element !== parseInt(couponId,10));
+                sessionStorage.setItem('coupon', couponItemsIDs);
+                console.log(couponItemsIDs);
+
+                if (document.getElementById("right-aside-menu-list").childElementCount === 1) {
+                    document.getElementById("right-aside-menu-list-title").style.display = "block";
+                }
+            }
         });
 
     } catch (error) {
         console.error(error);
     }
-}
+}//   Checked ***x100 added***
 
 const LoadBasketballData = () => {
 
-}
+}//   Checked
 
 const LoadVolleyballData = () => {
 
-}
+}//   Checked
 
 const LoadTennisData = () => {
 
-}
+}//   Checked
 
 const LoadHandballData = () => {
 
-}
+}//   Checked
 
 const LoadAmericanFootballData = () =>{
 
-}
+}//   Checked
 
 const getUserFromsessionStorage = () => {
     const userData = sessionStorage.getItem('user');
     if (userData) {
       const user = JSON.parse(userData);
-    //   console.log('Kayıtlı Kullanıcı Bilgileri:', user);
+
       return user;
     } else {
       console.log('No user data found in sessionStorage');
+
       return null;
     }
-}
+}//   Checked
 
 const checkUserLoggedIn = () => {
     if(sessionStorage.getItem('isLoggedIn') && sessionStorage.getItem('user') != null){
         let userCred = JSON.parse(sessionStorage.getItem('user'));
         let walletAddress = userCred.wallet;
 
+        let userActiveCoupons = userCred.activeCoupons;
+
         loggedInNameSurname.innerHTML = userCred.name + " " + userCred.surname;
         loggedInWalletAddress.innerHTML = walletAddress.slice(0,7) + "..." + walletAddress.slice(-5);
+
+        if(userActiveCoupons != undefined) {
+            betHistoryList.innerHTML = "";
+            Object.keys(userActiveCoupons).forEach(key => {
+              
+              console.log(`Key: ${key}`);
+              const couponItemIDs = userActiveCoupons[key].couponItemIDs;
+              let betHistoryTemplate = `
+                  <li class="bet-history-item">
+                                              
+                      <div class="coupon-top">
+                          <div class="coupon-id">${key}</div>
+                          <div class="coupon-details-button">
+                              <i class="fa-solid fa-caret-down"></i>
+                          </div>
+                      </div>
+                      
+                      <div class="coupon-items">
+                          <ul id="coupon-item-list-${key}">
+
+                          </ul>
+                      </div>
+                      
+                      <div class="bet-ratio-amount">
+                          <div class="bet-amount">Amount: ${userActiveCoupons[key].betAmount}</div>
+                          <div class="total-earn">Earn: ${((userActiveCoupons[key].betAmount) * (userActiveCoupons[key].ratioResult)).toFixed(2)}</div>
+                          <div class="status active-bet">Active</div>
+                      </div>
+                  </li>
+              `;
+
+              
+              betHistoryList.innerHTML += betHistoryTemplate;
+              
+              let couponItemList = document.getElementById(`coupon-item-list-${key}`);
+              
+              couponItemIDs.forEach(item => {
+                  // console.log(`Bet Select: ${item.betSelect}, ID: ${item.id}`);
+                  const betItemID = item.id;
+                  const betItemSelection = item.betSelect;
+                  const betItemHomeTeam = item.home;
+                  const betItemAwayTeam = item.away;
+                  
+                  let innerBetHistoryTemplate = `
+                      
+                      <li class="coupon-item">
+                          <div class="fixture-id">${betItemID}</div>
+                          <div class="fixture-details">
+                              <div class="home-team">${betItemHomeTeam}</div>
+                              <div>-</div>
+                              <div class="away-team">${betItemAwayTeam}</div>
+                          </div>
+                          <div class="fixture-bets">
+                              <div class="user-bet-selection">${betItemSelection}</div>
+                              <div class="user-bet-ratio">2.35</div>
+                          </div>
+                      </li>
+                      
+                  `;
+                  
+                  couponItemList.innerHTML += innerBetHistoryTemplate;
+                  
+              });
+
+            });
+          } 
 
         loggedInCard.style.display = "flex";
         notLoggedInCard.style.display = "none";
@@ -803,11 +942,10 @@ const checkUserLoggedIn = () => {
     }else {
         return false;
     }
-}
+}//   Checked
 
 const getDataFromApi = async(fixtureID) => {
 
-    // Assuming this code is inside an async function
     let fixtureIDUrl = `https://api-football-v1.p.rapidapi.com/v3/fixtures?id=${fixtureID}`;
     try {
         const fixtureResponse = await fetch(fixtureIDUrl, options);
@@ -828,4 +966,29 @@ const getDataFromApi = async(fixtureID) => {
     } catch (error) {
         console.error('Error fetching fixture data:', error);
     }
-}
+}//   Checked
+
+/* Blockchain Start */
+async function connectWallet() {
+    if (window.ethereum) {
+        web3 = new Web3(window.ethereum);
+        console.log("Web3 instance created");
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        console.log("Ethereum enabled and accounts retrieved");
+        bettingContract = new web3.eth.Contract(contractABI, contractAddress);
+    } else {
+        throw new Error("MetaMask not detected");
+    }
+}//   Checked
+
+window.onload = async () => {
+    if (sessionStorage.getItem("isLoggedIn") === "true") {
+        try {
+            await connectWallet();
+            console.log("Metamask reconnected on page load");
+        } catch (error) {
+            console.error("Error reconnecting Metamask on page load:", error);
+        }
+    }
+};//   Checked
+/* Blockchain End */
