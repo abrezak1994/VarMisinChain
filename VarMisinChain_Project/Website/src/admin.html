@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Admin Panel</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.4/dist/web3.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://kit.fontawesome.com/dc5003e1d5.js" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCg7v7WfCozs0gvtzeEQtTMs2JtkWIPtUY",
+            authDomain: "varmisinchain-database.firebaseapp.com",
+            databaseURL: "https://varmisinchain-database-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "varmisinchain-database",
+            storageBucket: "varmisinchain-database.appspot.com",
+            messagingSenderId: "757044737761",
+            appId: "1:757044737761:web:8dde4b426d43236ce129a0",
+            measurementId: "G-58F8BSG6GC"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
+    <title>VarMısınChain Admin Panel</title>
+</head>
+
+<body>
+    <div class="container">
+        <header id="header">
+            <div class="header-container">
+                <div class="header-left">
+                    <h1 id="header-title">VarMısınChain</h1>
+                </div>
+                <div class="header-mid-outer">
+                    <div class="header-mid-left">Welcome to Admin Panel</div>
+                    <div class="header-mid">
+                        <div class="header-logo">
+                            <img src="img/Ethereum_logo_2014.svg.png" alt="VarMısınChain" srcset="">
+                        </div>
+                    </div>
+                    <div class="header-mid-right">Secure & Fast Way to Earn Money</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-login-signup">
+                        <div id="logged-in-card" class="logged-in-card-container">
+                            <div class="logged-in-left">
+                                <div id="logged-in-name-surname"></div>
+                                <div id="logged-in-wallet-address"></div>
+                            </div>
+                            <div id="sign-out" class="logged-in-right">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </div>
+                        </div>
+                        <div id="not-logged-in-card">
+                            <a href="#" id="login"><i class="login fa-solid fa-user"></i> Login</a>
+                        </div>
+                        <div id="login-card" class="login-card-container">
+                            <form id="login-form" class="login-form">
+                                <div class="inner-login-form">
+                                    <h3>
+                                        <div>Login Here</div>
+                                        <div id="close-login-tab"><i class="fa-solid fa-xmark close-icon"></i></div>
+                                    </h3>
+                                    <label for="username">Username</label>
+                                    <input type="text" placeholder="Email or Phone" id="username">
+                                    <label for="password">Password</label>
+                                    <input type="password" placeholder="Password" id="password">
+                                    <button id="login-action-button">Log In</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <style>
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 20px;
+            }
+            .form-group input, .form-group button {
+                margin: 5px 0;
+            }
+            .form-group span {
+                margin-top: 5px;
+            }
+            button {
+                color: orange;
+                background-color: #333;
+                border: none;
+                padding: 10px;
+                cursor: pointer;
+                display: block;
+            }
+            button:hover {
+                background-color: #555;
+            }
+            #main-section {
+                max-width: 600px;
+                margin: auto;
+            }
+            .form-group-full {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 20px;
+            }
+            .form-group-full button {
+                width: 100%;
+            }
+        </style>
+
+        <main id="main-section">
+            <div class="main-section-container">
+                <div class="form-group">
+                    <input type="number" id="fundAmount" placeholder="Amount in ETH to fund">
+                    <button id="fundButton">Fund Contract</button>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="withdrawAmount" placeholder="Amount in ETH to withdraw">
+                    <button id="withdrawButton">Withdraw to Bank</button>
+                    <span id="contractBalance">(anlaşmadaki miktar)</span>
+                </div>
+                <div class="form-group-full">
+                    <button id="resetBetButton">Reset Bet</button>
+                </div>
+                <div class="form-group-full">
+                    <button id="winButton">Declare Win (only player can tab)</button>
+                </div>
+                <div id="betsDisplay"></div>
+            </div>
+        </main>
+
+        <section id="others">
+            <div class="others-container">
+                <div class="team-members-container">
+                    <ul class="team-members-list">
+                        <li class="team-member"></li>
+                        <li class="team-member"></li>
+                        <li class="team-member"></li>
+                        <li class="team-member"></li>
+                    </ul>
+                </div>
+                <div class="about-us">
+                    <div class="about-us-content"></div>
+                    <div class="about-us-content"></div>
+                    <div class="about-us-content"></div>
+                    <div class="about-us-content"></div>
+                </div>
+                <div class="contact-us">
+                    <div class="contact-info"></div>
+                    <div class="contact-info"></div>
+                    <div class="contact-info"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer id="footer">
+            <div class="footer-container">
+                <div class="footer-left">
+                    <h3>VarMısınChain</h3>
+                </div>
+                <div class="footer-mid">
+                    <h3>Copyright</h3>
+                </div>
+                <div class="footer-right">
+                    <h3>Others</h3>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        let web3;
+        let bettingContract;
+        const contractAddress = '0x2248605aDE3aA131E8975beD2dd3C1674350FA14'; // Update this with your contract address
+        const contractABI = [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "odds",
+          "type": "uint256"
+        }
+      ],
+      "name": "BetPlaced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "name": "ErrorLog",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Funded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "payout",
+          "type": "uint256"
+        }
+      ],
+      "name": "PayoutSuccess",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "bank",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "betAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "odds",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "player",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_odds",
+          "type": "uint256"
+        }
+      ],
+      "name": "placeBet",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function",
+      "payable": true
+    },
+    {
+      "inputs": [],
+      "name": "win",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fundContract",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function",
+      "payable": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawContract",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    }
+  ];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('Document loaded');
+            disableElements(true);
+
+            const loginLink = document.getElementById('login');
+            const loginCard = document.getElementById('login-card');
+            const signOutButton = document.getElementById('sign-out');
+
+            loginLink.addEventListener('click', function (event) {
+                event.preventDefault(); // Default davranışı engelle
+                console.log('Login link clicked');
+                loginCard.style.display = 'block'; // Login formunu göster
+            });
+
+            const closeLoginTab = document.getElementById('close-login-tab');
+            closeLoginTab.addEventListener('click', function (event) {
+                event.preventDefault();
+                loginCard.style.display = 'none'; // Login formunu gizle
+            });
+
+            signOutButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+                try {
+                    await firebase.auth().signOut();
+                    console.log('User signed out');
+                    alert('Çıkış başarılı!');
+                    sessionStorage.clear();
+                    disableElements(true);
+
+                    document.getElementById('logged-in-card').style.display = 'none';
+                    document.getElementById('not-logged-in-card').style.display = 'block';
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                    alert('Çıkış yapılırken hata oluştu: ' + error.message);
+                }
+            });
+        });
+
+        const fundButton = document.getElementById('fundButton');
+        const fundAmount = document.getElementById('fundAmount');
+        const withdrawButton = document.getElementById('withdrawButton');
+        const withdrawAmount = document.getElementById('withdrawAmount');
+        const resetBetButton = document.getElementById('resetBetButton');
+        const winButton = document.getElementById('winButton');
+        const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-action-button');
+
+        loginButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            console.log('Login button clicked'); // Debug log
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            console.log(`Email: ${email}, Password: ${password}`); // Debug log
+
+            if (email === 'banka@gmail.com') {
+                try {
+                    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    console.log("Kullanıcı giriş yaptı:", user.uid);
+                    alert("Giriş başarılı!");
+
+                    disableElements(false);
+
+                    await connectWallet(); // MetaMask ile bağlantı
+
+                    // Realtime Database'den kullanıcı bilgilerini al
+                    const userRef = await firebase.database().ref("users/" + user.uid);
+                    userRef.once("value").then((snapshot) => {
+                        if (snapshot.exists()) {
+                            const userData = snapshot.val();
+                            let walletAddress = userData.wallet;
+
+                            document.getElementById('logged-in-name-surname').innerHTML = userData.name + " " + userData.surname;
+                            document.getElementById('logged-in-wallet-address').innerHTML =
+                                walletAddress.slice(0, 7) + "..." + walletAddress.slice(-5);
+
+                            // Kullanıcı bilgilerini sessionStorage'a kaydet
+                            sessionStorage.setItem("user", JSON.stringify(userData));
+                            sessionStorage.setItem("uid", user.uid);
+                            sessionStorage.setItem("isLoggedIn", true);
+                            sessionStorage.setItem("coupon", "");
+
+                            document.getElementById('login-card').style.display = "none";
+                            document.getElementById('logged-in-card').style.display = "flex";
+                            document.getElementById('not-logged-in-card').style.display = "none";
+
+                            updateContractBalance(); // Giriş yapıldıktan sonra anlaşmadaki miktarı güncelle
+                            setInterval(updateContractBalance, 1000); // Her saniye güncelleme
+                        } else {
+                            console.log("Kullanıcı bilgisi bulunamadı");
+                            alert("Kullanıcı bilgisi bulunamadı!");
+                        }
+                    });
+                } catch (error) {
+                    console.error("Giriş hatası:", error.message);
+                    alert("Giriş bilgileri hatalı: " + error.message);
+                }
+            } else {
+                alert("Banka bilgileri hatalı.");
+            }
+        });
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                console.log("Web3 instance created");
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                console.log("Ethereum enabled and accounts retrieved");
+                bettingContract = new web3.eth.Contract(contractABI, contractAddress);
+            } else {
+                throw new Error("MetaMask not detected");
+            }
+        }
+
+        fundButton.addEventListener('click', async () => {
+            console.log('Fund Contract button clicked');
+            const amountInWei = web3.utils.toWei(fundAmount.value, 'ether');
+            console.log('Amount in ETH:', fundAmount.value);
+            console.log('Amount in Wei:', amountInWei);
+            try {
+                const accounts = await web3.eth.getAccounts();
+                console.log('Accounts retrieved:', accounts);
+                await bettingContract.methods.fundContract().send({ from: accounts[0], value: amountInWei });
+                console.log('Contract successfully funded');
+                alert('Contract successfully funded');
+                updateContractBalance();
+            } catch (error) {
+                console.error('Funding failed', error);
+                alert('Funding failed: ' + error.message);
+            }
+        });
+
+        winButton.addEventListener('click', async () => {
+            console.log('Declare Win button clicked');
+            try {
+                const accounts = await web3.eth.getAccounts();
+                console.log('Accounts retrieved:', accounts);
+                await bettingContract.methods.win().send({ from: accounts[0] }); // Player hesabını kullanarak çağırıyoruz
+                console.log('Win declared and funds transferred to the player');
+                alert('Win declared and funds transferred to the player!');
+                updateContractBalance();
+            } catch (error) {
+                console.error('Error declaring win', error);
+                alert('Error declaring win: ' + error.message);
+            }
+        });
+
+        withdrawButton.addEventListener('click', async () => {
+            console.log('Withdraw to Bank button clicked');
+            const amountInWei = web3.utils.toWei(withdrawAmount.value, 'ether');
+            console.log('Amount in ETH:', withdrawAmount.value);
+            console.log('Amount in Wei:', amountInWei);
+            try {
+                const accounts = await web3.eth.getAccounts();
+                console.log('Accounts retrieved:', accounts);
+                // Call a method to withdraw funds from the contract
+                await bettingContract.methods.withdrawContract(amountInWei).send({ from: accounts[0] });
+                console.log('Funds successfully withdrawn to bank');
+                alert('Funds successfully withdrawn to bank');
+                updateContractBalance();
+            } catch (error) {
+                console.error('Withdrawal failed', error);
+                alert('Withdrawal failed: ' + error.message);
+            }
+        });
+
+        resetBetButton.addEventListener('click', async () => {
+            console.log('Reset Bet button clicked');
+            try {
+                const accounts = await web3.eth.getAccounts();
+                console.log('Accounts retrieved:', accounts);
+                await bettingContract.methods.resetBet().send({ from: accounts[0] });
+                console.log('Bet reset');
+                alert('Bet reset successfully');
+                updateContractBalance();
+            } catch (error) {
+                console.error('Error resetting bet', error);
+                alert('Error resetting bet: ' + error.message);
+            }
+        });
+
+        async function updateContractBalance() {
+            try {
+                const balance = await bettingContract.methods.getContractBalance().call();
+                const balanceInEth = web3.utils.fromWei(balance, 'ether');
+                document.getElementById('contractBalance').textContent = `(anlaşmadaki miktar: ${balanceInEth} ETH)`;
+            } catch (error) {
+                console.error('Error fetching contract balance', error);
+            }
+        }
+
+        function disableElements(disable) {
+            fundButton.disabled = disable;
+            fundAmount.disabled = disable;
+            withdrawButton.disabled = disable;
+            withdrawAmount.disabled = disable;
+            resetBetButton.disabled = disable;
+            winButton.disabled = disable;
+        }
+    </script>
+</body>
+</html>

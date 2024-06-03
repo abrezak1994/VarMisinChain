@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Contract</title>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.4/dist/web3.min.js"></script>
+</head>
+<body>
+    <h1>Betting Contract</h1>
+    <button id="enableEthereumButton">Connect Wallet</button>
+    <div>
+        <input type="number" id="ethAmount" placeholder="Enter ETH amount">
+        <button id="odds1_5Button" onclick="selectOdds(1.5)">1.5</button>
+        <button id="odds2_0Button" onclick="selectOdds(2.0)">2.0</button>
+        <button id="depositButton">Place Bet</button>
+    </div>
+
+    <script>
+        let web3;
+        let bettingContract;
+        let selectedOdds;
+
+        const contractAddress = '0x03b437aaA15E537A6Ad714B74869F4f3CD7C6b38';
+        const contractABI = [ {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "odds",
+          "type": "uint256"
+        }
+      ],
+      "name": "BetPlaced",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "name": "ErrorLog",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Funded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "player",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "payout",
+          "type": "uint256"
+        }
+      ],
+      "name": "PayoutSuccess",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "bank",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "betAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "odds",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "player",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    },
+    {
+      "inputs": [],
+      "name": "fundContract",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function",
+      "payable": true
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_odds",
+          "type": "uint256"
+        }
+      ],
+      "name": "placeBet",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function",
+      "payable": true
+    },
+    {
+      "inputs": [],
+      "name": "win",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "lose",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function",
+      "constant": true
+    }];  
+
+    window.addEventListener('load', async () => {
+            console.log('Window loaded');
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                console.log('Web3 instance created');
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    console.log('Ethereum enabled and accounts retrieved');
+                } catch (error) {
+                    console.error('User denied account access', error);
+                }
+            } else {
+                console.log('MetaMask not detected');
+            }
+            bettingContract = new web3.eth.Contract(contractABI, contractAddress);
+            console.log('Betting contract instance created');
+        });
+
+        document.getElementById('enableEthereumButton').addEventListener('click', async () => {
+            console.log('Connect Wallet button clicked');
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                console.log('Ethereum enabled and accounts retrieved');
+            } catch (error) {
+                console.error('User denied account access', error);
+            }
+        });
+
+        function selectOdds(odds) {
+            selectedOdds = odds;
+            console.log('Odds selected:', odds);
+        }
+
+        document.getElementById('depositButton').addEventListener('click', async () => {
+            console.log('Place Bet button clicked');
+            const accounts = await web3.eth.getAccounts();
+            console.log('Accounts retrieved:', accounts);
+            const amount = document.getElementById('ethAmount').value.trim();
+            const amountInWei = web3.utils.toWei(amount, 'ether');
+            console.log('Amount in ETH:', amount);
+            console.log('Amount in Wei:', amountInWei);
+            try {
+                await bettingContract.methods.placeBet(selectedOdds).send({ from: accounts[0], value: amountInWei });
+                console.log('Bet successfully placed');
+                alert('Bet successfully placed!');
+            } catch (error) {
+                console.error('Bet placement failed:', error);
+                alert('Failed to place bet: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
